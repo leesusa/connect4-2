@@ -1,0 +1,6 @@
+[22924] Failed to execute script connect-four-naive
+Connect Four - Python
+Traceback (most recent call last):
+  File "connect-four-naive.py", line 9, in <module>
+    player = int(sys.argv[2]) # --player <p>
+IndexError: list index out of range
