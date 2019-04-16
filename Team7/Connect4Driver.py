@@ -22,9 +22,9 @@ grid[4][5] = 2
 '''
 
 # exes and args
-exe_1 = "/Users/Dood/Desktop/Team7/dist/connect-four-naive"
+exe_1 = "/Users/Dood/Desktop/Team7/connect-four-naive"
 args_1 = []
-exe_2 = "/Users/Dood/Desktop/Team7/dist/connect-four-naive"
+exe_2 = "/Users/Dood/Desktop/Team7/connect-four-naive"
 args_2 = []
 
 
@@ -61,18 +61,24 @@ def is_winner(grid, player):
 
 
 # check for draw
-def is_draw(grid):
+def is_draw(grid, move):
     # make sure there are no winners!
     if is_winner(grid, 1):
         return False
     if is_winner(grid, 2):
         return False
     # if grid is completely full... it is a draw!
-    for c in range(width):
-        for r in range(height):
-            if grid[c][r] != 1 or grid[c][r] != 2:
-                return False
-    return True
+    if width*height == move:
+        return True
+    return False
+
+def is_valid_move(move, player):
+    for r in range(height-1, -1, -1):
+        if grid[move][r] != 1 and grid[move][r] != 2:
+            grid[move][r] = player
+            return True
+    return False
+            
 
 # print grid
 def print_grid(grid):
@@ -93,10 +99,9 @@ def next_player(player):
 def main():
     #print_grid(grid)
     # create ports for standard error (text) files
-    args_1 = ["--player 1 --width " + str(width) +" --height " + str(height)]
-    args_2 = ["--player 2 --width " + str(width) +" --height " + str(height)]
+    args_1 = ["--player", "1", "--width", str(width), "--height", str(height)]
+    args_2 = ["--player", "2", "--width", str(width), "--height", str(height)]
     # create subprocesses and open stderr files
-    '''
     process1 = subprocess.Popen([exe_1]+args_1,
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                 stderr=open("connect-four-stderr-1.txt", "w"),
@@ -114,6 +119,7 @@ def main():
                                 stdin=subprocess.PIPE, stdout=subprocess.PIPE,
                                 stderr=open("connect-four-stderr-2.txt", "w"),
                                 universal_newlines=True)
+    '''
     # create vector of standard port
     # game loop and alternate players called
     done = False
@@ -127,40 +133,43 @@ def main():
         # create json expression for the grid
         json_grid = json.dumps(json.JSONEncoder().encode({"grid": grid}))
         # send grid to appropriate player
+        #print_grid(grid)
         if player == 1:
             print("player 1 processing")
             process1.stdin.write(json.JSONEncoder().encode({"grid": grid}) + '\n')
             process1.stdin.flush()
-            print("after write")
-            process1.stdout.readline()
+            response = process1.stdout.readline()
+            response = json.JSONDecoder().decode(response)
             process1.stdout.flush()
-            #print(process1.stdout.readline())
-            #return_p1 = process1.communicate(json.JSONEncoder().encode({"grid": grid}).encode())[0]
+
         if player == 2:
             print("player 2 processing")
             process2.stdin.write(json.JSONEncoder().encode({"grid": grid}) + '\n')
             process2.stdin.flush()
-            print("after write")
-            process2.stdout.readline()
+            response = process2.stdout.readline()
+            response = json.JSONDecoder().decode(response)
             process2.stdout.flush()
-            #print(process1.stdout.readline())
-            #return_p2 = process2.communicate(json.JSONEncoder().encode({"grid": grid}).encode())[0]
-        # get returned value
+
         # check value
-        # print grid / move / player
-        # check for winner
-        # output winner / draw data
-        if is_winner(grid, player):
-            done = True
-            winner = player
-            print("The winner is %d" % player)
-        elif is_draw(grid):
-            done = True
-            draw = True
-            print("The game ends in a draw")
-        player = next_player(player)
-        move += 1
+        if not is_valid_move(response['move'], player):
+            print("Invalid move")
+        else:
+            # increment number of valid moves
+            move += 1
+            # check for winner
+            # output winner / draw data
+            if is_winner(grid, player):
+                done = True
+                winner = player
+                print("The winner is %d" % player)
+            elif is_draw(grid, move):
+                done = True
+                draw = True
+                print("The game ends in a draw")
+            player = next_player(player)
+    print_grid(grid)
     # close ports
+    
 
 
 main()
